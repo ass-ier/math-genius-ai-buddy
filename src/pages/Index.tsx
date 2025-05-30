@@ -1,17 +1,18 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Calculator, BookOpen, Trophy, MessageCircle, Target } from "lucide-react";
+import { Brain, Calculator, BookOpen, Trophy, MessageCircle, Target, LogOut, User } from "lucide-react";
 import { AssessmentModal } from "@/components/AssessmentModal";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ProgressDashboard } from "@/components/ProgressDashboard";
 import { TopicSelector } from "@/components/TopicSelector";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isAssessmentOpen, setIsAssessmentOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   const mathTopics = [
     { id: 'arithmetic', name: 'Arithmetic', icon: Calculator, color: 'bg-blue-500' },
@@ -20,6 +21,10 @@ const Index = () => {
     { id: 'trigonometry', name: 'Trigonometry', icon: BookOpen, color: 'bg-orange-500' },
     { id: 'calculus', name: 'Calculus', icon: Trophy, color: 'bg-red-500' }
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -167,8 +172,14 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="outline">Login</Button>
-            <Button>Sign Up</Button>
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <User className="h-4 w-4" />
+              <span>{user?.email}</span>
+            </div>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </nav>
