@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +21,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
@@ -54,6 +53,7 @@ Make questions progressively challenging and educational. Use clear mathematical
       questions = JSON.parse(questionsText)
     } catch (parseError) {
       // If JSON parsing fails, create a fallback structure
+      console.error("JSON parse error:", parseError)
       questions = [{
         question: "Sample question parsing failed",
         correct_answer: "N/A",
@@ -70,8 +70,9 @@ Make questions progressively challenging and educational. Use clear mathematical
       },
     )
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
