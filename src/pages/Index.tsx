@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { AssessmentModal } from "@/components/AssessmentModal";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ProgressDashboard } from "@/components/ProgressDashboard";
 import { TopicSelector } from "@/components/TopicSelector";
+import { Presentation } from "@/components/Presentation";
 import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
