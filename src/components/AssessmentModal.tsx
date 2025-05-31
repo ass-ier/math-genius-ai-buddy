@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Lightbulb, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import React from "react";
 
 interface AssessmentModalProps {
   isOpen: boolean;
@@ -49,9 +49,60 @@ export const AssessmentModal = ({ isOpen, onClose }: AssessmentModalProps) => {
     { value: '3', label: 'Advanced', description: 'Challenging problems requiring deep understanding' }
   ];
 
+  // Simplified hardcoded questions for demo
+  const demoQuestions: Question[] = [
+    {
+      question: "What is 2 + 2?",
+      correct_answer: "4",
+      explanation: "2 plus 2 equals 4.",
+      hints: ["Add the two numbers", "2 + 2 = ?"]
+    },
+    {
+      question: "Solve for x: x + 3 = 5",
+      correct_answer: "2",
+      explanation: "Subtract 3 from both sides: x = 2",
+      hints: ["Isolate x", "Subtract 3"]
+    },
+    {
+      question: "What is 10 - 4?",
+      correct_answer: "6",
+      explanation: "10 minus 4 equals 6.",
+      hints: ["Subtract 4 from 10"]
+    },
+    {
+      question: "Simplify: 3 × 3",
+      correct_answer: "9",
+      explanation: "3 times 3 equals 9.",
+      hints: ["Multiply 3 by 3"]
+    },
+    {
+      question: "What is half of 8?",
+      correct_answer: "4",
+      explanation: "Half of 8 is 4.",
+      hints: ["Divide 8 by 2"]
+    }
+  ];
+
+  // Normalize answers: lower case, no spaces, no '=', no parentheses, trim leading 'x'
+  const normalize = (str: string) =>
+    str.toLowerCase()
+      .replace(/\s+/g, '')   // remove all spaces
+      .replace(/=/g, '')     // remove equal signs
+      .replace(/[()]/g, '')  // remove parentheses
+      .replace(/^x/, '')     // remove leading 'x' (optional)
+      .trim();
+
+  // Compare user answer and correct answer after normalization
+  const answersMatch = (userAnswer: string, correctAnswer: string) => {
+    return normalize(userAnswer) === normalize(correctAnswer);
+  };
+
   const startAssessment = async () => {
     setIsLoading(true);
     try {
+      // For demo, just use hardcoded questions instead of API call
+      // Uncomment below to use your supabase function:
+      /*
       const { data, error } = await supabase.functions.invoke('generate-questions', {
         body: {
           topic: selectedTopic,
@@ -59,12 +110,18 @@ export const AssessmentModal = ({ isOpen, onClose }: AssessmentModalProps) => {
           count: 5
         }
       });
-
       if (error) throw error;
-
       setQuestions(data.questions);
-      setUserAnswers(new Array(data.questions.length).fill(''));
+      */
+
+      // Use demo questions:
+      setQuestions(demoQuestions);
+
+      setUserAnswers(new Array(demoQuestions.length).fill(''));
       setStep('assessment');
+      setCurrentQuestionIndex(0);
+      setSelectedAnswer('');
+      setShowHints(false);
     } catch (error) {
       console.error('Error generating questions:', error);
       toast({
@@ -103,7 +160,7 @@ export const AssessmentModal = ({ isOpen, onClose }: AssessmentModalProps) => {
   const calculateScore = () => {
     let correct = 0;
     questions.forEach((question, index) => {
-      if (userAnswers[index].toLowerCase().trim() === question.correct_answer.toLowerCase().trim()) {
+      if (answersMatch(userAnswers[index] || '', question.correct_answer)) {
         correct++;
       }
     });
@@ -187,101 +244,89 @@ export const AssessmentModal = ({ isOpen, onClose }: AssessmentModalProps) => {
               <CardHeader>
                 <CardTitle>Problem {currentQuestionIndex + 1}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-lg">{questions[currentQuestionIndex]?.question}</p>
-                
-                <div>
-                  <Label htmlFor="answer">Your Answer:</Label>
-                  <input
-                    id="answer"
-                    type="text"
-                    value={selectedAnswer}
-                    onChange={(e) => setSelectedAnswer(e.target.value)}
-                    className="w-full mt-2 p-2 border rounded-md"
-                    placeholder="Enter your answer here..."
-                  />
-                </div>
+              <CardContent>
+                <p className="mb-4 text-lg font-semibold">{questions[currentQuestionIndex].question}</p>
 
-                <div className="flex justify-between">
-                  <Button 
-                    variant="outline" 
+                <textarea
+                  className="w-full border rounded p-2"
+                  rows={2}
+                  value={selectedAnswer}
+                  onChange={(e) => setSelectedAnswer(e.target.value)}
+                  placeholder="Enter your answer here"
+                />
+
+                <div className="mt-4 flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setShowHints(!showHints)}
-                    className="flex items-center gap-2"
                   >
-                    <Lightbulb className="h-4 w-4" />
-                    {showHints ? 'Hide Hints' : 'Show Hints'}
-                  </Button>
-                  <Button onClick={submitAnswer}>
-                    {currentQuestionIndex === questions.length - 1 ? 'Finish Assessment' : 'Next Question'}
+                    <Lightbulb className="mr-2 h-4 w-4" />
+                    {showHints ? "Hide Hints" : "Show Hints"}
                   </Button>
                 </div>
 
                 {showHints && (
-                  <Card className="bg-yellow-50 border-yellow-200">
-                    <CardContent className="pt-4">
-                      <h4 className="font-medium mb-2">Hints:</h4>
-                      <ul className="list-disc list-inside space-y-1">
-                        {questions[currentQuestionIndex]?.hints?.map((hint, index) => (
-                          <li key={index} className="text-sm">{hint}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
+                  <ul className="mt-3 list-disc list-inside text-sm text-gray-600">
+                    {questions[currentQuestionIndex].hints.map((hint, idx) => (
+                      <li key={idx}>{hint}</li>
+                    ))}
+                  </ul>
                 )}
               </CardContent>
             </Card>
+
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                disabled={currentQuestionIndex === 0}
+                onClick={() => {
+                  setCurrentQuestionIndex(currentQuestionIndex - 1);
+                  setSelectedAnswer(userAnswers[currentQuestionIndex - 1] || '');
+                  setShowHints(false);
+                }}
+              >
+                Previous
+              </Button>
+              <Button onClick={submitAnswer}>
+                {currentQuestionIndex === questions.length - 1 ? 'Submit' : 'Next'}
+              </Button>
+            </div>
           </div>
         )}
 
         {step === 'results' && (
           <div className="space-y-6">
-            <div className="text-center">
-              <Trophy className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold mb-2">Assessment Complete!</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-4">
-                Score: {calculateScore()}%
-              </div>
+            <div className="flex items-center space-x-3">
+              <Trophy className="text-yellow-500" size={24} />
+              <h2 className="text-2xl font-bold">Your Score: {calculateScore()}%</h2>
             </div>
 
-            <div className="space-y-4">
-              <h4 className="text-lg font-semibold">Review Your Answers:</h4>
-              {questions.map((question, index) => {
-                const isCorrect = userAnswers[index]?.toLowerCase().trim() === question.correct_answer.toLowerCase().trim();
-                return (
-                  <Card key={index} className={`border-l-4 ${isCorrect ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-start gap-3">
-                        {isCorrect ? (
-                          <CheckCircle className="h-5 w-5 text-green-500 mt-1" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-500 mt-1" />
-                        )}
-                        <div className="flex-1">
-                          <p className="font-medium mb-2">{question.question}</p>
-                          <div className="text-sm space-y-1">
-                            <p><strong>Your Answer:</strong> {userAnswers[index] || 'No answer provided'}</p>
-                            <p><strong>Correct Answer:</strong> {question.correct_answer}</p>
-                            {!isCorrect && (
-                              <div className="mt-2 p-2 bg-blue-50 rounded">
-                                <p><strong>Explanation:</strong> {question.explanation}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            {questions.map((question, index) => {
+              const isCorrect = answersMatch(userAnswers[index] || '', question.correct_answer);
+              return (
+                <Card key={index} className="border">
+                  <CardHeader className="flex justify-between items-center">
+                    <CardTitle>{`Question ${index + 1}`}</CardTitle>
+                    {isCorrect ? (
+                      <CheckCircle className="text-green-600" />
+                    ) : (
+                      <XCircle className="text-red-600" />
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="mb-2 font-semibold">{question.question}</p>
+                    <p><strong>Your answer:</strong> {userAnswers[index] || "(No answer)"}</p>
+                    <p><strong>Correct answer:</strong> {question.correct_answer}</p>
+                    <p className="mt-2 text-sm italic">{question.explanation}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
 
             <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={resetAssessment}>
-                Take Another Assessment
-              </Button>
-              <Button onClick={onClose}>
-                Close
-              </Button>
+              <Button variant="outline" onClick={resetAssessment}>Try Again</Button>
+              <Button onClick={onClose}>Close</Button>
             </div>
           </div>
         )}

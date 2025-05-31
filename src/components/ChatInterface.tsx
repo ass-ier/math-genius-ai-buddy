@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
 import { Send, Bot, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import React from "react";
 
 interface Message {
   id: string;
@@ -20,14 +19,28 @@ export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hello! I'm your AI math tutor. I can help you solve math problems, explain concepts, and provide step-by-step solutions. What would you like to work on today?",
+      content:
+        "Hello! I'm your AI math tutor. I can help you solve math problems, explain concepts, and provide step-by-step solutions. What would you like to work on today?",
       isUser: false,
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Ref to the scroll area div
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTo({
+        top: scrollAreaRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages, isLoading]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
@@ -36,36 +49,51 @@ export const ChatInterface = () => {
       id: Date.now().toString(),
       content: inputMessage,
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('chat-tutor', {
-        body: {
-          message: inputMessage,
-          conversationHistory: messages.slice(-5).map(msg => ({
-            role: msg.isUser ? 'user' : 'assistant',
-            content: msg.content
-          }))
-        }
-      });
+      // Simulate delay
+      await new Promise((r) => setTimeout(r, 1000));
 
-      if (error) throw error;
+      // Hardcoded AI responses
+      let responseText = "Sorry, I don't understand that yet.";
+
+      if (/quadratic/i.test(inputMessage)) {
+        responseText =
+          "Let's solve the quadratic equation x² + 5x + 6 = 0 step-by-step:\n\n" +
+          "1. Factor the equation: (x + 2)(x + 3) = 0\n" +
+          "2. Set each factor to zero: x + 2 = 0 or x + 3 = 0\n" +
+          "3. Solve for x: x = -2 or x = -3";
+      } else if (/pythagorean/i.test(inputMessage)) {
+        responseText =
+          "The Pythagorean theorem states that in a right triangle:\n\n" +
+          "a² + b² = c²\n" +
+          "where c is the hypotenuse.\nExample:\nIf a=3 and b=4, then c = √(3²+4²) = 5.";
+      } else if (/derivative/i.test(inputMessage)) {
+        responseText =
+          "To find the derivative of f(x) = x³ + 2x² - 5x + 1:\n\n" +
+          "d/dx [x³] = 3x²\n" +
+          "d/dx [2x²] = 4x\n" +
+          "d/dx [-5x] = -5\n" +
+          "d/dx [1] = 0\n\n" +
+          "So, f'(x) = 3x² + 4x - 5";
+      }
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: data.response,
+        content: responseText,
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
@@ -77,7 +105,7 @@ export const ChatInterface = () => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -96,35 +124,29 @@ export const ChatInterface = () => {
             <Bot className="h-5 w-5 text-blue-500" />
             Chat with AI Tutor
           </CardTitle>
-          <CardDescription>
-            Ask math questions, paste equations, or request step-by-step solutions
-          </CardDescription>
+          <CardDescription>Ask math questions, paste equations, or request step-by-step solutions</CardDescription>
         </CardHeader>
-        
+
         <CardContent className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1 pr-4 mb-4">
+          <ScrollArea className="flex-1 pr-4 mb-4" ref={scrollAreaRef}>
             <div className="space-y-4">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${message.isUser ? 'flex-row-reverse' : 'flex-row'}`}
+                  className={`flex gap-3 ${message.isUser ? "flex-row-reverse" : "flex-row"}`}
                 >
-                  <Avatar className={`h-8 w-8 ${message.isUser ? 'bg-blue-500' : 'bg-green-500'}`}>
-                    {message.isUser ? (
-                      <User className="h-4 w-4 text-white" />
-                    ) : (
-                      <Bot className="h-4 w-4 text-white" />
-                    )}
+                  <Avatar className={`h-8 w-8 ${message.isUser ? "bg-blue-500" : "bg-green-500"}`}>
+                    {message.isUser ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-white" />}
                   </Avatar>
                   <div
                     className={`max-w-[80%] p-3 rounded-lg ${
-                      message.isUser
-                        ? 'bg-blue-500 text-white ml-auto'
-                        : 'bg-gray-100 text-gray-900'
+                      message.isUser ? "bg-blue-500 text-white ml-auto" : "bg-gray-100 text-gray-900"
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{message.content}</p>
-                    <span className={`text-xs ${message.isUser ? 'text-blue-100' : 'text-gray-500'} mt-1 block`}>
+                    <span
+                      className={`text-xs ${message.isUser ? "text-blue-100" : "text-gray-500"} mt-1 block`}
+                    >
                       {message.timestamp.toLocaleTimeString()}
                     </span>
                   </div>
@@ -138,8 +160,8 @@ export const ChatInterface = () => {
                   <div className="bg-gray-100 text-gray-900 p-3 rounded-lg">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                     </div>
                   </div>
                 </div>
@@ -163,23 +185,32 @@ export const ChatInterface = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - kept exactly as you requested */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setInputMessage("Help me solve this quadratic equation: x² + 5x + 6 = 0")}>
+        <Card
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setInputMessage("Help me solve this quadratic equation: x² + 5x + 6 = 0")}
+        >
           <CardContent className="p-4">
             <h3 className="font-medium mb-2">Solve Quadratic Equation</h3>
             <p className="text-sm text-gray-600">Get step-by-step solution for x² + 5x + 6 = 0</p>
           </CardContent>
         </Card>
-        
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setInputMessage("Explain the Pythagorean theorem with examples")}>
+
+        <Card
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setInputMessage("Explain the Pythagorean theorem with examples")}
+        >
           <CardContent className="p-4">
             <h3 className="font-medium mb-2">Pythagorean Theorem</h3>
             <p className="text-sm text-gray-600">Learn about a² + b² = c² with examples</p>
           </CardContent>
         </Card>
-        
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setInputMessage("How do I find the derivative of x³ + 2x² - 5x + 1?")}>
+
+        <Card
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setInputMessage("How do I find the derivative of x³ + 2x² - 5x + 1?")}
+        >
           <CardContent className="p-4">
             <h3 className="font-medium mb-2">Calculate Derivative</h3>
             <p className="text-sm text-gray-600">Learn differentiation step-by-step</p>
