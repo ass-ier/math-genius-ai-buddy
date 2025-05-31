@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
 import { Send, Bot, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getChatResponse } from "@/services/chatResponses";
 import React from "react";
 
 interface Message {
@@ -57,32 +58,10 @@ export const ChatInterface = () => {
     setIsLoading(true);
 
     try {
-      // Simulate delay
-      await new Promise((r) => setTimeout(r, 1000));
+      // Simulate delay for better UX
+      await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
 
-      // Hardcoded AI responses
-      let responseText = "Sorry, I don't understand that yet.";
-
-      if (/quadratic/i.test(inputMessage)) {
-        responseText =
-          "Let's solve the quadratic equation x² + 5x + 6 = 0 step-by-step:\n\n" +
-          "1. Factor the equation: (x + 2)(x + 3) = 0\n" +
-          "2. Set each factor to zero: x + 2 = 0 or x + 3 = 0\n" +
-          "3. Solve for x: x = -2 or x = -3";
-      } else if (/pythagorean/i.test(inputMessage)) {
-        responseText =
-          "The Pythagorean theorem states that in a right triangle:\n\n" +
-          "a² + b² = c²\n" +
-          "where c is the hypotenuse.\nExample:\nIf a=3 and b=4, then c = √(3²+4²) = 5.";
-      } else if (/derivative/i.test(inputMessage)) {
-        responseText =
-          "To find the derivative of f(x) = x³ + 2x² - 5x + 1:\n\n" +
-          "d/dx [x³] = 3x²\n" +
-          "d/dx [2x²] = 4x\n" +
-          "d/dx [-5x] = -5\n" +
-          "d/dx [1] = 0\n\n" +
-          "So, f'(x) = 3x² + 4x - 5";
-      }
+      const responseText = getChatResponse(inputMessage);
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -185,7 +164,7 @@ export const ChatInterface = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions - kept exactly as you requested */}
+      {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
           className="cursor-pointer hover:shadow-md transition-shadow"

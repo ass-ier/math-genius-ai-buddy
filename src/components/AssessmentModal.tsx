@@ -8,19 +8,12 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Lightbulb, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { getQuestionsByTopic, Question } from "@/services/questionBank";
 import React from "react";
 
 interface AssessmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-interface Question {
-  question: string;
-  correct_answer: string;
-  explanation: string;
-  hints: string[];
 }
 
 export const AssessmentModal = ({ isOpen, onClose }: AssessmentModalProps) => {
@@ -49,50 +42,14 @@ export const AssessmentModal = ({ isOpen, onClose }: AssessmentModalProps) => {
     { value: '3', label: 'Advanced', description: 'Challenging problems requiring deep understanding' }
   ];
 
-  // Simplified hardcoded questions for demo
-  const demoQuestions: Question[] = [
-    {
-      question: "What is 2 + 2?",
-      correct_answer: "4",
-      explanation: "2 plus 2 equals 4.",
-      hints: ["Add the two numbers", "2 + 2 = ?"]
-    },
-    {
-      question: "Solve for x: x + 3 = 5",
-      correct_answer: "2",
-      explanation: "Subtract 3 from both sides: x = 2",
-      hints: ["Isolate x", "Subtract 3"]
-    },
-    {
-      question: "What is 10 - 4?",
-      correct_answer: "6",
-      explanation: "10 minus 4 equals 6.",
-      hints: ["Subtract 4 from 10"]
-    },
-    {
-      question: "Simplify: 3 × 3",
-      correct_answer: "9",
-      explanation: "3 times 3 equals 9.",
-      hints: ["Multiply 3 by 3"]
-    },
-    {
-      question: "What is half of 8?",
-      correct_answer: "4",
-      explanation: "Half of 8 is 4.",
-      hints: ["Divide 8 by 2"]
-    }
-  ];
-
-  // Normalize answers: lower case, no spaces, no '=', no parentheses, trim leading 'x'
   const normalize = (str: string) =>
     str.toLowerCase()
-      .replace(/\s+/g, '')   // remove all spaces
-      .replace(/=/g, '')     // remove equal signs
-      .replace(/[()]/g, '')  // remove parentheses
-      .replace(/^x/, '')     // remove leading 'x' (optional)
+      .replace(/\s+/g, '')
+      .replace(/=/g, '')
+      .replace(/[()]/g, '')
+      .replace(/^x/, '')
       .trim();
 
-  // Compare user answer and correct answer after normalization
   const answersMatch = (userAnswer: string, correctAnswer: string) => {
     return normalize(userAnswer) === normalize(correctAnswer);
   };
@@ -100,33 +57,28 @@ export const AssessmentModal = ({ isOpen, onClose }: AssessmentModalProps) => {
   const startAssessment = async () => {
     setIsLoading(true);
     try {
-      // For demo, just use hardcoded questions instead of API call
-      // Uncomment below to use your supabase function:
-      /*
-      const { data, error } = await supabase.functions.invoke('generate-questions', {
-        body: {
-          topic: selectedTopic,
-          difficulty: parseInt(selectedDifficulty),
-          count: 5
-        }
-      });
-      if (error) throw error;
-      setQuestions(data.questions);
-      */
+      const assessmentQuestions = getQuestionsByTopic(selectedTopic, parseInt(selectedDifficulty), 5);
+      
+      if (assessmentQuestions.length === 0) {
+        toast({
+          title: "No questions available",
+          description: "No questions found for this topic and difficulty level.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Use demo questions:
-      setQuestions(demoQuestions);
-
-      setUserAnswers(new Array(demoQuestions.length).fill(''));
+      setQuestions(assessmentQuestions);
+      setUserAnswers(new Array(assessmentQuestions.length).fill(''));
       setStep('assessment');
       setCurrentQuestionIndex(0);
       setSelectedAnswer('');
       setShowHints(false);
     } catch (error) {
-      console.error('Error generating questions:', error);
+      console.error('Error loading questions:', error);
       toast({
         title: "Error",
-        description: "Failed to generate assessment questions. Please try again.",
+        description: "Failed to load assessment questions. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -225,7 +177,7 @@ export const AssessmentModal = ({ isOpen, onClose }: AssessmentModalProps) => {
             <div className="flex justify-end space-x-3">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
               <Button onClick={startAssessment} disabled={isLoading}>
-                {isLoading ? 'Generating Questions...' : 'Start Assessment'}
+                {isLoading ? 'Loading Questions...' : 'Start Assessment'}
               </Button>
             </div>
           </div>
