@@ -30,17 +30,12 @@ export const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Ref to the scroll area div
-  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+  // Ref to the messages container
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   const sendMessage = async () => {
@@ -107,8 +102,8 @@ export const ChatInterface = () => {
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1 pr-4 mb-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
+          <ScrollArea className="flex-1 pr-4 mb-4">
+            <div className="space-y-4 p-2">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -122,7 +117,7 @@ export const ChatInterface = () => {
                       message.isUser ? "bg-blue-500 text-white ml-auto" : "bg-gray-100 text-gray-900"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
                     <span
                       className={`text-xs ${message.isUser ? "text-blue-100" : "text-gray-500"} mt-1 block`}
                     >
@@ -145,6 +140,7 @@ export const ChatInterface = () => {
                   </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
