@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -93,7 +94,7 @@ export const ChatInterface = () => {
       </div>
 
       <Card className="h-[600px] flex flex-col">
-        <CardHeader>
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-blue-500" />
             Chat with AI Tutor
@@ -101,15 +102,15 @@ export const ChatInterface = () => {
           <CardDescription>Ask math questions, paste equations, or request step-by-step solutions</CardDescription>
         </CardHeader>
 
-        <CardContent className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1 pr-4 mb-4">
-            <div className="space-y-4 p-2">
+        <CardContent className="flex-1 flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1 mb-4 max-h-full">
+            <div className="space-y-4 p-2 pr-4">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex gap-3 ${message.isUser ? "flex-row-reverse" : "flex-row"}`}
                 >
-                  <Avatar className={`h-8 w-8 ${message.isUser ? "bg-blue-500" : "bg-green-500"}`}>
+                  <Avatar className={`h-8 w-8 flex-shrink-0 ${message.isUser ? "bg-blue-500" : "bg-green-500"}`}>
                     {message.isUser ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-white" />}
                   </Avatar>
                   <div
@@ -117,7 +118,7 @@ export const ChatInterface = () => {
                       message.isUser ? "bg-blue-500 text-white ml-auto" : "bg-gray-100 text-gray-900"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.content}</p>
                     <span
                       className={`text-xs ${message.isUser ? "text-blue-100" : "text-gray-500"} mt-1 block`}
                     >
@@ -128,7 +129,7 @@ export const ChatInterface = () => {
               ))}
               {isLoading && (
                 <div className="flex gap-3">
-                  <Avatar className="h-8 w-8 bg-green-500">
+                  <Avatar className="h-8 w-8 flex-shrink-0 bg-green-500">
                     <Bot className="h-4 w-4 text-white" />
                   </Avatar>
                   <div className="bg-gray-100 text-gray-900 p-3 rounded-lg">
@@ -144,7 +145,7 @@ export const ChatInterface = () => {
             </div>
           </ScrollArea>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
